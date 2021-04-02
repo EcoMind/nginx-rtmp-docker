@@ -1,3 +1,7 @@
+## Forked to work as a non root, unprivileged user
+
+Integrating some snippets from [NGINX Unprivileged Docker Image](https://github.com/nginxinc/docker-nginx-unprivileged).
+
 [![Deploy](https://github.com/tiangolo/nginx-rtmp-docker/workflows/Deploy/badge.svg)](https://github.com/tiangolo/nginx-rtmp-docker/actions?query=workflow%3ADeploy)
 
 ## Supported tags and respective `Dockerfile` links

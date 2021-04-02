@@ -1,10 +1,20 @@
 FROM buildpack-deps:stretch
 
-LABEL maintainer="Sebastian Ramirez <tiangolo@gmail.com>"
+LABEL maintainer="Antonio Fragola <fragolino@gmail.com>"
+# credits to original maintainer: LABEL maintainer="Sebastian Ramirez <tiangolo@gmail.com>"
 
 # Versions of Nginx and nginx-rtmp-module to use
 ENV NGINX_VERSION nginx-1.18.0
 ENV NGINX_RTMP_MODULE_VERSION 1.2.1
+
+ARG UID=1000
+ARG GID=1000
+
+RUN set -x \
+# create nginx user/group first, to be consistent throughout docker variants
+    && addgroup --system --gid $GID nginx \
+    && adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent \
+       --gecos "nginx user" --shell /bin/false --uid $UID nginx
 
 # Install dependencies
 RUN apt-get update && \
@@ -40,6 +50,8 @@ RUN cd /tmp/build/nginx/${NGINX_VERSION} && \
         --with-threads \
         --with-ipv6 \
         --add-module=/tmp/build/nginx-rtmp-module/nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION} && \
+        # This allows debug information to be accessed with: `error_log /var/log/nginx/error.log debug;`.
+        # --add-module=/tmp/build/nginx-rtmp-module/nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION} --with-debug && \
     make -j $(getconf _NPROCESSORS_ONLN) && \
     make install && \
     mkdir /var/lock/nginx && \
@@ -47,10 +59,20 @@ RUN cd /tmp/build/nginx/${NGINX_VERSION} && \
 
 # Forward logs to Docker
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
-    ln -sf /dev/stderr /var/log/nginx/error.log
+    ln -sf /dev/stderr /var/log/nginx/error.log \
+# nginx user must own the cache and etc directory to write cache and tweak the nginx config
+#    && chown -R $UID:0 /var/cache/nginx \
+#    && chmod -R g+w /var/cache/nginx \
+    && chown -R $UID:0 /etc/nginx \
+    && chmod -R g+w /etc/nginx
 
 # Set up config file
 COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 1935
+
+STOPSIGNAL SIGQUIT
+
+USER $UID
+
 CMD ["nginx", "-g", "daemon off;"]
