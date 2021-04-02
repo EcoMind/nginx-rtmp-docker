@@ -18,7 +18,7 @@ RUN set -x \
 
 # Install dependencies
 RUN apt-get update && \
-    apt-get install -y ca-certificates openssl libssl-dev && \
+    apt-get install -y ca-certificates openssl build-essential libpcre3 libpcre3-dev libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and decompress Nginx
@@ -49,6 +49,7 @@ RUN cd /tmp/build/nginx/${NGINX_VERSION} && \
         --with-http_ssl_module \
         --with-threads \
         --with-ipv6 \
+        --with-http_secure_link_module \
         --add-module=/tmp/build/nginx-rtmp-module/nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION} && \
         # This allows debug information to be accessed with: `error_log /var/log/nginx/error.log debug;`.
         # --add-module=/tmp/build/nginx-rtmp-module/nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION} --with-debug && \
